@@ -4,7 +4,7 @@ import json
 from telegram import Bot, Update
 
 from telegram_agent_aws.config import settings
-from telegram_agent_aws.infrastructure.telegram.handlers import handle_photo, handle_text, handle_voice
+from telegram_agent_aws.infrastructure.telegram.handlers import handle_text, handle_voice
 
 
 async def process_update(update_data: dict):
@@ -25,7 +25,7 @@ async def process_update(update_data: dict):
             elif update.message.voice:
                 await handle_voice(update, context)
             elif update.message.photo:
-                await handle_photo(update, context)
+                await update.message.reply_text("Sorry, I can't process images at the moment. Please send me a text or voice message instead! 😊")
             else:
                 await update.message.reply_text("Sorry, I don't support this message type yet.")
         else:

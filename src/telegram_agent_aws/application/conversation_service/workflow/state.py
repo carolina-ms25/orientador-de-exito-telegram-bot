@@ -5,3 +5,4 @@ class TelegramAgentState(MessagesState):
     summary: str
     response_type: str
     audio_buffer: bytes
+    input_type: str  # "text" or "voice"

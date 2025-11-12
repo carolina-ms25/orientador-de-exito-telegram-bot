@@ -1,7 +1,7 @@
 [project]
 name = "telegram-agent-aws"
 version = "0.1.0"
-description = "A multimodal Telegram Agent deployed to AWS Lambda"
+description = "A bimodal University Success Advisor Telegram Bot deployed to AWS Lambda"
 readme = "README.md"
 classifiers = [
     # TODO
@@ -24,7 +24,6 @@ dependencies = [
   "langchain-community>=0.3.31",
   "opik>=1.8.74",
   "langchain-qdrant>=0.2.1",
-  "pillow>=11.3.0",
   "qdrant-client>=1.15.1",
   "litellm==1.76.1",
   "langgraph-checkpoint-mongodb>=0.2.1",

@@ -9,7 +9,13 @@ from telegram_agent_aws.infrastructure.clients.qdrant import get_qdrant_client
 
 
 def generate_split_documents():
-    loader = PyPDFLoader("./data/karan_full_biography.pdf")
+    # TODO: Replace with actual university information PDF containing:
+    # - Academic programs and majors
+    # - Admission requirements 
+    # - Financial aid and scholarships
+    # - Campus facilities and services
+    # - Benefits and advantages
+    loader = PyPDFLoader("./data/university_programs_info.pdf")
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
     docs = loader.load()

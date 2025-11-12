@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>AWS Telegram Agent</h1>
-  <h3>Deploying a Multimodal Telegram Agent to AWS</h3>
+  <h1>University Success Advisor Bot</h1>
+  <h3>Deploying a Bimodal University Advisor Telegram Bot to AWS</h3>
 </div>
 
 </br>

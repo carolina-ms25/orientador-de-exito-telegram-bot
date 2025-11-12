@@ -1,13 +1,10 @@
-import random
-
 from langchain_core.messages import HumanMessage, RemoveMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
 
 from telegram_agent_aws.application.conversation_service.workflow.state import TelegramAgentState
 from telegram_agent_aws.application.conversation_service.workflow.tools import get_retriever_tool
 from telegram_agent_aws.config import settings
-from telegram_agent_aws.domain.prompts import ROUTER_SYSTEM_PROMPT, SYSTEM_PROMPT
+from telegram_agent_aws.domain.prompts import SYSTEM_PROMPT
 from telegram_agent_aws.infrastructure.clients.elevenlabs import get_elevenlabs_client
 from telegram_agent_aws.infrastructure.clients.openai import get_openai_client
 
@@ -15,26 +12,14 @@ openai_client = get_openai_client()
 elevenlabs_client = get_elevenlabs_client()
 
 
-class RouterResponse(BaseModel):
-    response_type: str = Field(description="The response type to give to the user. It must be one of: 'text' or 'audio'")
-
-
 def router_node(state: TelegramAgentState):
-    llm = ChatOpenAI(model=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY)
-
-    sys_msg = SystemMessage(content=ROUTER_SYSTEM_PROMPT.prompt)
-    llm_structured = llm.with_structured_output(RouterResponse)
-
-    response = llm_structured.invoke([sys_msg, state["messages"][-1]])
-
-    if response.response_type == "text":
-        if random.random() > 0.5:
-            # This is a way to give more realism to the bot.
-            # From time to time, the Telegram Agent will send voice notes,
-            # even if the "response_type" is "text"!
-            return {"response_type": "audio"}
-
-    return {"response_type": response.response_type}
+    # Input-Output consistency: respond in the same format as user input
+    input_type = state.get("input_type", "text")
+    
+    if input_type == "voice":
+        return {"response_type": "audio"}
+    else:
+        return {"response_type": "text"}
 
 
 def generate_text_response_node(state: TelegramAgentState):
