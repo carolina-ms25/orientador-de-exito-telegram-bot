@@ -12,54 +12,6 @@ openai_client = get_openai_client()
 elevenlabs_client = get_elevenlabs_client()
 
 
-def intention_detection_node(state: TelegramAgentState):
-    """
-    Analyze user message to detect intention and determine if academic information is needed.
-    """
-    llm = ChatOpenAI(model=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY)
-    
-    last_message = state["messages"][-1].content if state["messages"] else ""
-    
-    intention_prompt = f"""
-Analyze the following user message and determine the user's intention. Classify into one of these categories:
-
-ACADEMIC_INFO: User is asking about academic programs, careers, majors, courses, admission requirements, costs, tuition, scholarships, financial aid, facilities, benefits, enrollment dates, or any university-specific information.
-
-CONTACT_DATA: User is providing or being asked for personal information like name, email, phone number.
-
-GREETING: Basic greetings, introductions, or pleasantries.
-
-GENERAL: Other general conversation not requiring specific university data.
-
-User message: "{last_message}"
-
-Respond with ONLY the category name: ACADEMIC_INFO, CONTACT_DATA, GREETING, or GENERAL
-
-Examples:
-- "¿Qué carreras tienen?" → ACADEMIC_INFO
-- "¿Cuánto cuesta?" → ACADEMIC_INFO  
-- "Tengo becas?" → ACADEMIC_INFO
-- "Me llamo Juan" → CONTACT_DATA
-- "Hola" → GREETING
-- "¿Cómo estás?" → GENERAL
-"""
-
-    response = llm.invoke([{"role": "user", "content": intention_prompt}])
-    intention = response.content.strip().upper()
-    
-    # Map to our internal intention format
-    intention_map = {
-        "ACADEMIC_INFO": "academic_info",
-        "CONTACT_DATA": "contact_data", 
-        "GREETING": "greeting",
-        "GENERAL": "general"
-    }
-    
-    detected_intention = intention_map.get(intention, "general")
-    
-    return {"intention": detected_intention}
-
-
 def router_node(state: TelegramAgentState):
     # Input-Output consistency: respond in the same format as user input
     input_type = state.get("input_type", "text")
@@ -71,42 +23,20 @@ def router_node(state: TelegramAgentState):
 
 
 def generate_text_response_node(state: TelegramAgentState):
-    """Generate response with RAG capability when intention requires academic info"""
-    intention = state.get("intention", "general")
-    
     llm = ChatOpenAI(model=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY)
-    
-    # Only bind tools for academic information queries
-    if intention == "academic_info":
-        llm_with_tools = llm.bind_tools([get_retriever_tool()])
-    else:
-        llm_with_tools = llm
+    llm_with_tools = llm.bind_tools([get_retriever_tool()])
 
     summary = state.get("summary", "")
 
     if summary:
         system_message = f"{SYSTEM_PROMPT.prompt} \n Summary of conversation earlier: {summary}"
         messages = [SystemMessage(content=system_message)] + state["messages"]
+
     else:
         messages = [SystemMessage(content=SYSTEM_PROMPT.prompt)] + state["messages"]
 
     response = llm_with_tools.invoke(messages)
-    return {"messages": response}
 
-
-def generate_rag_response_node(state: TelegramAgentState):
-    """Generate final response after RAG tool execution"""
-    llm = ChatOpenAI(model=settings.OPENAI_MODEL, api_key=settings.OPENAI_API_KEY)
-    
-    summary = state.get("summary", "")
-    
-    if summary:
-        system_message = f"{SYSTEM_PROMPT.prompt} \n Summary of conversation earlier: {summary}"
-        messages = [SystemMessage(content=system_message)] + state["messages"]
-    else:
-        messages = [SystemMessage(content=SYSTEM_PROMPT.prompt)] + state["messages"]
-
-    response = llm.invoke(messages)
     return {"messages": response}
 
 
