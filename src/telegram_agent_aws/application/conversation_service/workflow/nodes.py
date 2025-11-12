@@ -72,4 +72,4 @@ def generate_final_response_node(state: TelegramAgentState):
         return {"audio_buffer": audio_bytes}
 
     else:
-        return state
+        return {}
