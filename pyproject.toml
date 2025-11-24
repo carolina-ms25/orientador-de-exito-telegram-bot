@@ -29,6 +29,8 @@ dependencies = [
   "langgraph-checkpoint-mongodb>=0.2.1",
   "pymongo[srv]>=4.15.3",
   "certifi>=2025.10.5",
+  "pandas>=2.0.0",
+  "openpyxl>=3.1.0",
 ]
 requires-python = ">= 3.10"
 
