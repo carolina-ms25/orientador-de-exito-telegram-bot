@@ -44,12 +44,30 @@ async def send_response(update: Update, context: ContextTypes.DEFAULT_TYPE, resp
     response_type = response["response_type"]
 
     if response_type == "text":
-        # Check if there's an image URL in the content
+        import re
+        
+        # Convert Markdown to HTML for Telegram
+        def markdown_to_html(text):
+            # Bold: **text** -> <b>text</b>
+            text = re.sub(r'\*\*([^\*]+)\*\*', r'<b>\1</b>', text)
+            # Italic: *text* -> <i>text</i> (solo si no es parte de **)
+            text = re.sub(r'(?<!\*)\*([^\*]+)\*(?!\*)', r'<i>\1</i>', text)
+            return text
+        
+        # Check if there's an image URL marker in the content
         if '[IMAGE_URL:' in content:
             # Extract image URL and clean text
             parts = content.split('[IMAGE_URL:')
             text_part = parts[0].strip()
             image_url = parts[1].split(']')[0].strip()
+            
+            # Remove any visible Google Drive URLs from text
+            text_part = re.sub(r'https://drive\.google\.com[^\s\)]+', '', text_part)
+            text_part = re.sub(r'\(https://drive\.google\.com[^\)]+\)', '', text_part)
+            text_part = text_part.strip()
+            
+            # Convert Markdown to HTML
+            text_part = markdown_to_html(text_part)
             
             # Send image with caption
             try:
@@ -62,6 +80,8 @@ async def send_response(update: Update, context: ContextTypes.DEFAULT_TYPE, resp
                 # If image fails, send text only
                 await update.message.reply_text(text_part, parse_mode='HTML')
         else:
+            # Convert Markdown to HTML
+            content = markdown_to_html(content)
             await update.message.reply_text(content, parse_mode='HTML')
 
     elif response_type == "audio":
