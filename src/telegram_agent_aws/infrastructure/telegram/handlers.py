@@ -39,37 +39,52 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def send_response(update: Update, context: ContextTypes.DEFAULT_TYPE, response: dict):
+    import re
+    from langchain_core.messages import ToolMessage
+    
     last_message = response["messages"][-1]
     content = last_message.content
     response_type = response["response_type"]
 
     if response_type == "text":
-        import re
-        
         # Convert Markdown to HTML for Telegram
         def markdown_to_html(text):
             # Bold: **text** -> <b>text</b>
             text = re.sub(r'\*\*([^\*]+)\*\*', r'<b>\1</b>', text)
-            # Italic: *text* -> <i>text</i> (solo si no es parte de **)
+            # Italic: *text* -> <i>text</i>
             text = re.sub(r'(?<!\*)\*([^\*]+)\*(?!\*)', r'<i>\1</i>', text)
             return text
         
-        # Check if there's an image URL marker in the content
-        if '[IMAGE_URL:' in content:
-            # Extract image URL and clean text
-            parts = content.split('[IMAGE_URL:')
-            text_part = parts[0].strip()
-            image_url = parts[1].split(']')[0].strip()
-            
-            # Remove any visible Google Drive URLs from text
-            text_part = re.sub(r'https://drive\.google\.com[^\s\)]+', '', text_part)
-            text_part = re.sub(r'\(https://drive\.google\.com[^\)]+\)', '', text_part)
-            text_part = text_part.strip()
-            
-            # Convert Markdown to HTML
-            text_part = markdown_to_html(text_part)
-            
-            # Send image with caption
+        # Extract image URL from tool messages metadata
+        image_url = None
+        for msg in response["messages"]:
+            if isinstance(msg, ToolMessage):
+                # Tool was used, check if it has metadata with image
+                try:
+                    # The tool returns documents, check if content has metadata markers
+                    if hasattr(msg, 'artifact') and msg.artifact:
+                        # Check documents in artifact
+                        for doc in msg.artifact:
+                            if hasattr(doc, 'metadata') and 'image_url' in doc.metadata:
+                                image_url = doc.metadata['image_url']
+                                break
+                except:
+                    pass
+                break
+        
+        # Clean content: remove image URLs that might appear in text
+        text_part = content
+        text_part = re.sub(r'!\[[^\]]*\]\([^\)]+\)', '', text_part)  # Remove markdown images
+        text_part = re.sub(r'\[IMAGE_URL:[^\]]+\]', '', text_part)  # Remove [IMAGE_URL:...]
+        text_part = re.sub(r'https://drive\.google\.com[^\s\)\]]+', '', text_part)  # Remove Drive URLs
+        text_part = re.sub(r'Imagen:.*?https://[^\s]+', '', text_part)  # Remove "Imagen: url" lines
+        text_part = text_part.strip()
+        
+        # Convert Markdown to HTML
+        text_part = markdown_to_html(text_part)
+        
+        # Send with image if URL found from tool metadata
+        if image_url:
             try:
                 await update.message.reply_photo(
                     photo=image_url,
@@ -80,9 +95,7 @@ async def send_response(update: Update, context: ContextTypes.DEFAULT_TYPE, resp
                 # If image fails, send text only
                 await update.message.reply_text(text_part, parse_mode='HTML')
         else:
-            # Convert Markdown to HTML
-            content = markdown_to_html(content)
-            await update.message.reply_text(content, parse_mode='HTML')
+            await update.message.reply_text(text_part, parse_mode='HTML')
 
     elif response_type == "audio":
         audio_bytes = response.get("audio_buffer")
