@@ -44,7 +44,25 @@ async def send_response(update: Update, context: ContextTypes.DEFAULT_TYPE, resp
     response_type = response["response_type"]
 
     if response_type == "text":
-        await update.message.reply_text(content)
+        # Check if there's an image URL in the content
+        if '[IMAGE_URL:' in content:
+            # Extract image URL and clean text
+            parts = content.split('[IMAGE_URL:')
+            text_part = parts[0].strip()
+            image_url = parts[1].split(']')[0].strip()
+            
+            # Send image with caption
+            try:
+                await update.message.reply_photo(
+                    photo=image_url,
+                    caption=text_part,
+                    parse_mode='HTML'
+                )
+            except Exception as e:
+                # If image fails, send text only
+                await update.message.reply_text(text_part, parse_mode='HTML')
+        else:
+            await update.message.reply_text(content, parse_mode='HTML')
 
     elif response_type == "audio":
         audio_bytes = response.get("audio_buffer")

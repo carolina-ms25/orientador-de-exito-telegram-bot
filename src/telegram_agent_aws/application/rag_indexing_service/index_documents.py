@@ -21,6 +21,7 @@ Formato: {row['Formato']}
 Costo: S/ {row['Costo (soles)']} soles
 Objetivo: {row['Objetivo']}
 Link de inscripción: {row['Link para inscripcion']}
+Imagen: {row['Imagen']}
 
 Este curso ofrece {row['Objetivo'].lower()}
 El formato de este curso es {row['Formato'].lower()}.
@@ -32,7 +33,8 @@ Para inscribirse, visita: {row['Link para inscripcion']}
             "course_name": row['Nombre del curso'],
             "format": row['Formato'],
             "price": row['Costo (soles)'],
-            "enrollment_link": row['Link para inscripcion']
+            "enrollment_link": row['Link para inscripcion'],
+            "image_url": row['Imagen']
         }
         
         documents.append(Document(page_content=content, metadata=metadata))
